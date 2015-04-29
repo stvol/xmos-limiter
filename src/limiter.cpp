@@ -33,16 +33,18 @@ Limiter::Limiter(float fs, float t_att, float t_hold, float t_rel)
 
 
   // peak detektor variable
-  int32_t m_oldPeak = 0;
-  int32_t m_Peak = 0;
+  m_oldPeak = 0;
+  m_Peak = 0;
 
   // rms detector variable
-  int32_t m_oldRms = 0;
-  int32_t m_Rms = 0;
+  m_oldRms = 0;
+  m_Rms = 0;
 
-  int32_t m_crest2 = 0;
-  int32_t m_tRelMax = float_to_fixed32(1.0,16);
-  int32_t m_tAttMax = float_to_fixed32(0.08,16);
+  m_crest2 = 0;
+  m_tRelMax = float_to_fixed32(1.0,16);
+  m_tAttMax = float_to_fixed32(0.08,16);
+  m_tauAtt = 0;
+  m_tauRel = 0;
 
 
   m_alpha = float_to_fixed32(exp(-1/(0.2*m_fs)),31);
@@ -120,8 +122,8 @@ int32_t Limiter::process_sample(int32_t input_sample[], int32_t output_sample[])
     // crest factor controlling
     x2n = max(output_sample[0], output_sample[1]);
     x2n = ((int64_t)x2n*x2n) >> 31;
-    m_Peak = max(x2n,((int64_t)m_alpha*m_oldPeak) >> 31 + ((int64_t)(0x7fffffff-m_alpha)*x2n) >> 31);
-    m_Rms = ((int64_t)m_alpha*m_oldRms) >> 31 + ((int64_t)(0x7fffffff-m_alpha)*x2n) >> 31;
+    m_Peak = max(x2n,(((int64_t)m_alpha*m_oldPeak) >> 31) + (((int64_t)(0x7fffffff-m_alpha)*x2n) >> 31));
+    m_Rms = (((int64_t)m_alpha*m_oldRms) >> 31) + (((int64_t)(0x7fffffff-m_alpha)*x2n) >> 31);
     m_oldPeak = m_Peak;
     m_oldRms = m_Rms;
 
@@ -133,7 +135,7 @@ int32_t Limiter::process_sample(int32_t input_sample[], int32_t output_sample[])
     m_tauAtt = ((int64_t) m_tauAtt * m_crest2) >> 16;
 
     m_tauRel = m_tRelMax >> 1;
-    m_tauRel = ((int64_t) m_tauRel * m_crest2) >> 16 - m_tauAtt;
+    m_tauRel = (((int64_t) m_tauRel * m_crest2) >> 16) - m_tauAtt;
 
 
 

@@ -44,6 +44,11 @@ class Limiter
   int32_t m_oldPeak;
 
   int32_t m_crest2;
+  int32_t m_tauAtt;
+  int32_t m_tauRel;
+  int32_t m_tRelMax;
+  int32_t m_tAttMax;
+
 
   // Gedaechtnisvariablen
   int32_t m_oldGain;
