@@ -1,28 +1,13 @@
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
+# Ignore everything
+*
 
-# Precompiled Headers
-*.gch
-*.pch
+# But not these files...
+!.gitignore
+!src/fixed_point_functions.cpp
+!src/fixed_point_functions.h
+!src/limiter.cpp
+!src/limiter.h
+# etc...
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
-
-# Fortran module files
-*.mod
-
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
-
-# Executables
-*.exe
-*.out
-*.app
+# ...even if they are in subdirectories
+!*/
