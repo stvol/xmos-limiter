@@ -18,7 +18,7 @@ class Limiter
   float   m_tAtt;
   float   m_tHold;
   float   m_tRel;
-
+  int32_t m_fixedFS;
 
 
   int32_t m_attBufferLen;

@@ -1,4 +1,4 @@
-#include "Limiter.h"
+#include "limiter.h"
 
 Limiter::Limiter(float fs, float t_att, float t_hold, float t_rel)
 {
@@ -8,6 +8,7 @@ Limiter::Limiter(float fs, float t_att, float t_hold, float t_rel)
   m_tAtt = t_att;
   m_tHold = t_hold;
   m_tRel = t_rel;
+  m_fixedFS = float_to_fixed32(1/m_fs,31);
 
   // calculate buffer length
   m_attBufferLen = (int32_t)(m_fs*m_tAtt) & 0xffffffe;
@@ -18,6 +19,7 @@ Limiter::Limiter(float fs, float t_att, float t_hold, float t_rel)
   
   // init state variables
   m_thresholdGlobal = 0x7fffffff; // Limiter zu Beginn ausschalten
+  m_thresholdGlobal = float_to_fixed32(0.5,31);
   m_makeUpGain      = 0x10000000; // zu Beginn keine Verstaerkung
   m_oldGain = 0x7fffffff;
   m_sum1 = 0;
@@ -28,8 +30,8 @@ Limiter::Limiter(float fs, float t_att, float t_hold, float t_rel)
   m_halfBufferPos = 0;
 
   // calculate release coeffitiens
-  m_aRel = float_to_fixed32(exp(-1/(m_tRel*m_fs)),31);
-  m_bRel = 0x7fffffff-m_aRel;
+  //m_aRel = float_to_fixed32(exp(-1/(m_tRel*m_fs)),31);
+  //m_bRel = 0x7fffffff-m_aRel;
 
 
   // peak detektor variable
@@ -144,7 +146,8 @@ int32_t Limiter::process_sample(int32_t input_sample[], int32_t output_sample[])
 
 
 
-
+    m_bRel = udiv32(m_fixedFS,m_tauRel);
+    m_aRel = 0x7fffffff-m_bRel;
 
 
 
