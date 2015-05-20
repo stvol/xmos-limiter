@@ -28,6 +28,7 @@
 #include <print.h>
 #include "app_global.h"
 #include "app_conf.h"
+#include "gain_struct.h"
 
 #ifdef USE_XSCOPE
 #include <xscope.h>

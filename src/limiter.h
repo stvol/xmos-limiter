@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 #include "fixed_point_functions.h"
+#include "gain_struct.h"
 
 class Limiter
 {
@@ -11,7 +12,7 @@ class Limiter
   Limiter(float fs, float t_att, float t_hold, float t_rel);
   ~Limiter();
 
-  int32_t process_sample(int32_t input_sample[], int32_t output_sample[]);
+  gains process_sample(int32_t input_sample[], int32_t output_sample[]);
 
  private:
   float   fs;
@@ -19,6 +20,7 @@ class Limiter
   float   tHold;
   float   tRel;
   int32_t fixedFS;
+  gains return_gains;
 
 
   int32_t attBufferLen;
@@ -34,8 +36,12 @@ class Limiter
   int32_t *halfBuffer1;
   int32_t *halfBuffer2;
 
-  int32_t aRel;
-  int32_t bRel;
+  int32_t normal_aRel;
+  int32_t normal_bRel;
+
+  int32_t crest_aRel;
+  int32_t crest_bRel;
+
   int32_t alpha;
 
   int32_t oldRms;
@@ -51,7 +57,8 @@ class Limiter
 
 
   // Gedaechtnisvariablen
-  int32_t oldGain;
+  int32_t normal_oldGain;
+  int32_t crest_oldGain;
   int32_t sum1;
   int32_t sum2;
 

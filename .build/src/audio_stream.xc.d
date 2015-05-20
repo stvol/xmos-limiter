@@ -2,5 +2,6 @@
   ../../workspace/Reverb/src/audio_stream.h \
   ../../workspace/Reverb/src/app_global.h \
   ../../workspace/Reverb/src/app_conf.h \
+  ../../workspace/Reverb/src/gain_struct.h \
   ../../workspace/Reverb/src/audio_processing.h
 

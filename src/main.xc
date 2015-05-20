@@ -32,8 +32,10 @@ void xscope_user_init( void ) // 'C' constructor function (NB called before main
     xscope_register( 1
         //,XSCOPE_CONTINUOUS ,"Input" ,XSCOPE_INT ,"n"
         //,XSCOPE_CONTINUOUS ,"Output" ,XSCOPE_INT ,"n"
-        //,XSCOPE_CONTINUOUS ,"GainOHNECr" ,XSCOPE_INT ,"n"
-        ,XSCOPE_CONTINUOUS ,"Gain" ,XSCOPE_INT ,"n"
+        //,XSCOPE_CONTINUOUS ,"Gain_normal" ,XSCOPE_INT ,"n"
+        //,XSCOPE_CONTINUOUS ,"Gain_crest" ,XSCOPE_INT ,"n"
+        //,XSCOPE_CONTINUOUS ,"CrestFac" ,XSCOPE_INT ,"n"
+        ,XSCOPE_CONTINUOUS ,"Tau" ,XSCOPE_INT ,"n"
     ); // xscope_register
 
     xscope_config_io( XSCOPE_IO_BASIC ); // Enable XScope printing

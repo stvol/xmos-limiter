@@ -19,7 +19,8 @@ Limiter::Limiter(float fs, float t_att, float t_hold, float t_rel)
     //thresholdGlobal = 0x7fffffff; // Limiter zu Beginn ausschalten
     thresholdGlobal = float_to_fixed32(0.1,31);
     makeUpGain      = 0x10000000; // zu Beginn keine Verstaerkung
-    oldGain = 0x7fffffff;
+    normal_oldGain = 0x7fffffff;
+    crest_oldGain = 0x7fffffff;
     sum1 = 0;
     sum2 = 0;
 
@@ -28,8 +29,8 @@ Limiter::Limiter(float fs, float t_att, float t_hold, float t_rel)
     halfBufferPos = 0;
 
     // calculate release coeffitiens
-    aRel = float_to_fixed32(exp(-1/(tRel*fs)),31);
-    bRel = 0x7fffffff-aRel;
+    normal_aRel = float_to_fixed32(exp(-1/(tRel*fs)),31);
+    normal_bRel = 0x7fffffff-normal_aRel;
 
     // peak detektor variable
     oldPeak = 0;
@@ -65,7 +66,7 @@ Limiter::~Limiter() {
 }
 
 
-int32_t Limiter::process_sample(int32_t input_sample[], int32_t output_sample[]) {
+gains Limiter::process_sample(int32_t input_sample[], int32_t output_sample[]) {
     // temporaere / Hilfsvariablen
     int i;
     int32_t actMax;
@@ -73,7 +74,8 @@ int32_t Limiter::process_sample(int32_t input_sample[], int32_t output_sample[])
     int32_t halfBufferOut;
     int32_t halfBufferIn;
     int64_t temp64;
-    int32_t gain;
+    int32_t normal_gain;
+    int32_t crest_gain;
     int32_t gainPlusMakeup;
     int32_t x2n;
 
@@ -116,7 +118,8 @@ int32_t Limiter::process_sample(int32_t input_sample[], int32_t output_sample[])
     halfBuffer2[halfBufferPos] = halfBufferIn;
     sum2 = sum2 + halfBufferIn - halfBufferOut;
 
-    gain = sum2;
+    normal_gain = sum2;
+    crest_gain = sum2;
 
     // crest factor controlling
     x2n = max(output_sample[0], output_sample[1]);
@@ -126,33 +129,44 @@ int32_t Limiter::process_sample(int32_t input_sample[], int32_t output_sample[])
     oldPeak = Peak;
     oldRms = Rms;
 
-    crest2 = udiv32(Rms,Peak);
+    crest2 = udiv32(Rms,Peak); // 1/3
 
     //
-    tauAtt = tAttMax >> 1; // multiplay by two
+    tauAtt = tAttMax << 1; // multiplay by two
     // Q16.16 * Q1.31 -> Q17.47; Q17.47 >> 16 -> Q1.31
     tauAtt = ((int64_t) tauAtt * crest2) >> 16;
 
-    tauRel = tRelMax >> 1;
-    tauRel = (((int64_t) tauRel * crest2) >> 16) - tauAtt;
+    tauRel = tRelMax << 1; // 1s * 2
+    tauRel = (((int64_t) tauRel * crest2) >> 16);// - tauAtt;
 
-   bRel = udiv32(fixedFS, tauRel);
-   aRel = 0x7fffffff-bRel;
+   crest_bRel = udiv32(fixedFS, tauRel);
+   crest_aRel = 0x7fffffff-crest_bRel;
+
+
+
+    // Release mittels IIR Filter ohne Crest
+    if (normal_gain > normal_oldGain)
+    {
+        temp64  = (int64_t) normal_aRel * normal_oldGain;
+        temp64 += (int64_t) normal_bRel * normal_gain;
+        normal_gain = min(normal_gain, (int32_t) (temp64 >> 31));
+    }
+    normal_oldGain = normal_gain;
 
 
 
     // Release mittels IIR Filter
-    if (gain > oldGain)
+    if (crest_gain > crest_oldGain)
     {
-        temp64  = (int64_t) aRel * oldGain;
-        temp64 += (int64_t) bRel * gain;
-        gain = min(gain, (int32_t) (temp64 >> 31));
+        temp64  = (int64_t) crest_aRel * crest_oldGain;
+        temp64 += (int64_t) crest_bRel * crest_gain;
+        crest_gain = min(crest_gain, (int32_t) (temp64 >> 31));
     }
+    crest_oldGain = crest_gain;
 
-    oldGain = gain;
 
     // Q1.31 * Q4.28 -> Q5.59; Q5.59 >> 31 -> Q4.28
-    gainPlusMakeup = ((int64_t) makeUpGain * gain) >> 31;
+    gainPlusMakeup = ((int64_t) makeUpGain * normal_gain) >> 31;
 
     // 13. Apply this gain reduction to the preliminary 'Output' from step 1
     // Q1.31 * Q4.28 -> Q5.59; Q5.59 >> 28 -> Q1.31
@@ -172,5 +186,9 @@ int32_t Limiter::process_sample(int32_t input_sample[], int32_t output_sample[])
     if (halfBufferPos >= halfBufferLen)
         halfBufferPos = 0;
 
-    return gainPlusMakeup;
+    return_gains.normal_gain = normal_gain;
+    return_gains.crest_gain = crest_gain;
+    return_gains.crest_fac = crest2;
+    return_gains.tau = crest_bRel;
+    return return_gains;
 }

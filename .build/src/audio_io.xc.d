@@ -6,5 +6,6 @@
   ../../workspace/Reverb/src/i2s_master_conf.h \
   ../../workspace/Reverb/src/app_conf.h \
   ../../workspace/Reverb/src/app_global.h \
-  ../../workspace/Reverb/src/audio_processing.h
+  ../../workspace/Reverb/src/audio_processing.h \
+  ../../workspace/Reverb/src/gain_struct.h
 
