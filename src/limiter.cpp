@@ -7,7 +7,7 @@ Limiter::Limiter(float fs, float t_att, float t_hold, float t_rel)
     tAtt = t_att;
     tHold = t_hold;
     tRel = t_rel;
-    fixedFS = float_to_fixed32(1/fs,31);
+    fixedFS = float_to_fixed32(1/fs,31); // 1/48000
 
     // calculate buffer length
     attBufferLen = (int32_t)(fs*tAtt) & 0xffffffe;
@@ -136,7 +136,7 @@ gains Limiter::process_sample(int32_t input_sample[], int32_t output_sample[]) {
     // Q16.16 * Q1.31 -> Q17.47; Q17.47 >> 16 -> Q1.31
     tauAtt = ((int64_t) tauAtt * crest2) >> 16;
 
-    tauRel = tRelMax << 1; // 1s * 2
+    tauRel = tRelMax << 1; // 1s * 2 = 2s
     tauRel = (((int64_t) tauRel * crest2) >> 16);// - tauAtt;
 
    crest_bRel = udiv32(fixedFS, tauRel);
