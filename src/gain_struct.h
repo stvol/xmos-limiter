@@ -15,6 +15,7 @@ typedef struct gains {
     int32_t normal_gain;
     int32_t crest_fac;
     int32_t tau;
+    int32_t makeUpGain;
 } gains;
 
 

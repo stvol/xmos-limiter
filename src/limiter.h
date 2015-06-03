@@ -5,6 +5,7 @@
 
 #include "fixed_point_functions.h"
 #include "gain_struct.h"
+#include "URN.h"
 
 class Limiter
 {
@@ -13,6 +14,10 @@ class Limiter
   ~Limiter();
 
   gains process_sample(int32_t input_sample[], int32_t output_sample[]);
+  int32_t getThreshold(void);
+
+  void setThreshold(float newThresh);
+
 
  private:
   float   fs;

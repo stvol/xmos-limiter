@@ -51,9 +51,10 @@ void audio_stream( // Coar that applies a BiQuad filter to a set of of audio sam
         gains = audio_processing(inp_samps, NUM_APP_CHANS, out_samps, NUM_APP_CHANS);
         //xscope_int(0,gains.normal_gain);
         //xscope_int(1,gains.crest_gain);
-        //xscope_int(2,gains.crest_fac);
-        xscope_int(0,gains.tau);
-
+        //xscope_int(0,gains.crest_fac);
+        //xscope_int(1,gains.tau);
+        //xscope_int(0, out_samps[0]);
+        xscope_int(0, gains.crest_gain);
     } // while(1)
 
 } // audio_stream

@@ -17,8 +17,9 @@ Limiter::Limiter(float fs, float t_att, float t_hold, float t_rel)
 
     // init state variables
     //thresholdGlobal = 0x7fffffff; // Limiter zu Beginn ausschalten
-    thresholdGlobal = float_to_fixed32(0.1,31);
-    makeUpGain      = 0x10000000; // zu Beginn keine Verstaerkung
+    //thresholdGlobal = float_to_fixed32(0.1,31);
+    //makeUpGain      = 0x10000000; // zu Beginn keine Verstaerkung
+    setThreshold(0.1);
     normal_oldGain = 0x7fffffff;
     crest_oldGain = 0x7fffffff;
     sum1 = 0;
@@ -55,6 +56,8 @@ Limiter::Limiter(float fs, float t_att, float t_hold, float t_rel)
     memset(halfBuffer2, 0, halfBufferLen*sizeof(int32_t));
     attBufferRight = new int32_t[attBufferLen];
     attBufferLeft = new int32_t[attBufferLen];
+
+    urn_init();
 }
 
 Limiter::~Limiter() {
@@ -85,6 +88,8 @@ gains Limiter::process_sample(int32_t input_sample[], int32_t output_sample[]) {
     output_sample[1] = attBufferRight[attPos];
     attBufferLeft[attPos]  = input_sample[0];
     attBufferRight[attPos] = input_sample[1];
+    //attBufferLeft[attPos]  = urn()>>1;
+    //attBufferRight[attPos] = urn()>>1;
 
     // 2. Find maximum within this circular buffer. This can also be implemented
     // efficiently with an hold algorithm.
@@ -134,7 +139,7 @@ gains Limiter::process_sample(int32_t input_sample[], int32_t output_sample[]) {
     //
     tauAtt = tAttMax << 1; // multiplay by two
     // Q16.16 * Q1.31 -> Q17.47; Q17.47 >> 16 -> Q1.31
-    tauAtt = ((int64_t) tauAtt * crest2) >> 16;
+    tauAtt = ((int64_t) tauAtt * crest2) >> 16; // sollte 2/3, ist es aber nicht
 
     tauRel = tRelMax << 1; // 1s * 2
     tauRel = (((int64_t) tauRel * crest2) >> 16);// - tauAtt;
@@ -155,7 +160,7 @@ gains Limiter::process_sample(int32_t input_sample[], int32_t output_sample[]) {
 
 
 
-    // Release mittels IIR Filter
+    // Release mittels IIR Filter mit Crest
     if (crest_gain > crest_oldGain)
     {
         temp64  = (int64_t) crest_aRel * crest_oldGain;
@@ -165,13 +170,18 @@ gains Limiter::process_sample(int32_t input_sample[], int32_t output_sample[]) {
     crest_oldGain = crest_gain;
 
 
-    // Q1.31 * Q4.28 -> Q5.59; Q5.59 >> 31 -> Q4.28
-    gainPlusMakeup = ((int64_t) makeUpGain * normal_gain) >> 31;
+    // Q4.28 * Q1.31 -> Q5.59; Q5.59 >> 31 -> Q4.28
+    //gainPlusMakeup = ((int64_t) makeUpGain * normal_gain) >> 31;
+
 
     // 13. Apply this gain reduction to the preliminary 'Output' from step 1
     // Q1.31 * Q4.28 -> Q5.59; Q5.59 >> 28 -> Q1.31
-    output_sample[0] = ((int64_t) output_sample[0] * gainPlusMakeup) >> 28;
-    output_sample[1] = ((int64_t) output_sample[1] * gainPlusMakeup) >> 28;
+    output_sample[0] = ((int64_t) output_sample[0] * crest_gain) >> 31;
+    output_sample[1] = ((int64_t) output_sample[1] * crest_gain) >> 31;
+
+    // Q1.31 * Q8.24 -> Q9.55; Q9.55 >> 24 -> Q1.31
+    output_sample[0] = ((int64_t) output_sample[0] * makeUpGain) >> 23;
+    output_sample[1] = ((int64_t) output_sample[1] * makeUpGain) >> 23;
 
     // Buffer pointer verschieben
     attPos++;
@@ -189,6 +199,22 @@ gains Limiter::process_sample(int32_t input_sample[], int32_t output_sample[]) {
     return_gains.normal_gain = normal_gain;
     return_gains.crest_gain = crest_gain;
     return_gains.crest_fac = crest2;
-    return_gains.tau = crest_bRel;
+    //return_gains.tau = crest_bRel;
+    return_gains.tau = tauRel;
+    return_gains.makeUpGain = makeUpGain;
     return return_gains;
+}
+
+
+int32_t Limiter::getThreshold(void)
+{
+    return thresholdGlobal;
+}
+
+void Limiter::setThreshold(float newThresh)
+{
+    float mugFloat = (1/newThresh)-0.0001;
+    makeUpGain = float_to_fixed32(mugFloat,23);
+    thresholdGlobal = float_to_fixed32(newThresh,31);
+
 }

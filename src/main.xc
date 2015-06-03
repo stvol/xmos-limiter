@@ -29,12 +29,12 @@
 /*****************************************************************************/
 void xscope_user_init( void ) // 'C' constructor function (NB called before main)
 {
-    xscope_register( 1
+    xscope_register( 2
         //,XSCOPE_CONTINUOUS ,"Input" ,XSCOPE_INT ,"n"
         //,XSCOPE_CONTINUOUS ,"Output" ,XSCOPE_INT ,"n"
         //,XSCOPE_CONTINUOUS ,"Gain_normal" ,XSCOPE_INT ,"n"
         //,XSCOPE_CONTINUOUS ,"Gain_crest" ,XSCOPE_INT ,"n"
-        //,XSCOPE_CONTINUOUS ,"CrestFac" ,XSCOPE_INT ,"n"
+        ,XSCOPE_CONTINUOUS ,"CrestFac" ,XSCOPE_INT ,"n"
         ,XSCOPE_CONTINUOUS ,"Tau" ,XSCOPE_INT ,"n"
     ); // xscope_register
 
